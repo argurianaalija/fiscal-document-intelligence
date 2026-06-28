@@ -1,0 +1,42 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      ENVIRONMENT: development
+      LOG_LEVEL: DEBUG
+      REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: postgresql+asyncpg://fiscal:fiscal@postgres:5432/fiscal_docs
+      API_KEYS: dev-key-change-me
+      CONFIDENCE_THRESHOLD: "0.75"
+    depends_on:
+      - redis
+      - postgres
+    volumes:
+      - ../app:/app/app  # Hot reload in dev
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: fiscal
+      POSTGRES_PASSWORD: fiscal
+      POSTGRES_DB: fiscal_docs
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
